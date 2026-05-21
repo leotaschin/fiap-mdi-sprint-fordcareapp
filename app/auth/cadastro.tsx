@@ -56,10 +56,12 @@ export default function CadastroScreen() {
       router.replace('/veiculo/cadastro');
     } catch (err: any) {
       const msg = err?.message ?? '';
-      if (msg.includes('already registered') || msg.includes('already been registered')) {
+      if (msg === 'EMAIL_CONFIRMATION_REQUIRED') {
+        setErrors({ general: 'Confirmação de e-mail necessária. Desative "Confirm email" no painel do Supabase.' });
+      } else if (msg.includes('already registered') || msg.includes('already been registered') || msg.includes('User already registered')) {
         setErrors({ email: 'Esse e-mail já está cadastrado. Que tal fazer login?' });
       } else {
-        setErrors({ general: 'Erro ao criar conta. Tente novamente.' });
+        setErrors({ general: `Erro: ${msg || 'Tente novamente.'}` });
       }
     } finally {
       setLoading(false);

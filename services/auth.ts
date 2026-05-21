@@ -7,6 +7,10 @@ export async function cadastrar(name: string, email: string, password: string) {
     options: { data: { name } },
   });
   if (error) throw error;
+  if (!data.session) {
+    // signUp returned no session → email confirmation is still enabled in Supabase dashboard
+    throw new Error('EMAIL_CONFIRMATION_REQUIRED');
+  }
   return data.user;
 }
 

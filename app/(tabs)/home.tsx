@@ -12,15 +12,14 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '@/contexts/UserContext';
 import { computeAlerts } from '@/hooks/useAlerts';
+import { generateReport } from '@/utils/generateReport';
+import { atualizarKm } from '@/services/vehicle';
 import { VehicleCard } from '@/components/VehicleCard';
+import { BottomSheet } from '@/components/ui/BottomSheet';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Toast } from '@/components/ui/Toast';
 import { Colors, FontFamily, Spacing } from '@/constants/theme';
-
-const QUICK_ACTIONS = [
-  { icon: 'calendar-outline'    as const, label: 'Agendar\nrevisão', route: '/(tabs)/agendamento' },
-  { icon: 'construct-outline'   as const, label: 'Ver\nhistórico',   route: '/(tabs)/manutencoes' },
-  { icon: 'speedometer-outline' as const, label: 'Atualizar\nKM',    route: '/(tabs)/home'        },
-  { icon: 'star-outline'        as const, label: 'Meus\npontos',     route: '/(tabs)/perfil'      },
-];
 
 export default function HomeScreen() {
   const { profile, vehicles, selectedVehicleIndex, dispatch } = useUser();
@@ -28,9 +27,17 @@ export default function HomeScreen() {
   const swiperRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const firstName = profile?.name?.split(' ')[0] ?? 'você';
+  const [showKmSheet, setShowKmSheet] = useState(false);
+  const [newKm, setNewKm] = useState('');
+  const [kmError, setKmError] = useState('');
+  const [kmLoading, setKmLoading] = useState(false);
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' as 'success' | 'error' });
 
-  // Sync swiper position when navigating back to this screen
+  const firstName = profile?.name?.split(' ')[0] ?? 'você';
+  const currentVehicle = vehicles[currentIndex] ?? null;
+  const currentAlerts = computeAlerts(currentVehicle);
+  const report = generateReport(currentAlerts);
+
   useEffect(() => {
     if (selectedVehicleIndex > 0 && vehicles.length > 1) {
       setTimeout(() => {
@@ -45,6 +52,54 @@ export default function HomeScreen() {
     setCurrentIndex(idx);
     dispatch({ type: 'SELECT_VEHICLE', payload: idx });
   }
+
+  function openKmSheet() {
+    setNewKm('');
+    setKmError('');
+    setShowKmSheet(true);
+  }
+
+  async function handleUpdateKm() {
+    const km = parseInt(newKm);
+    if (!newKm.trim() || isNaN(km)) {
+      setKmError('Informe uma quilometragem válida');
+      return;
+    }
+    const currentKm = currentVehicle?.currentKm ?? 0;
+    if (km < currentKm) {
+      setKmError(`O KM não pode ser menor que o atual (${currentKm.toLocaleString('pt-BR')} km)`);
+      return;
+    }
+    if (!currentVehicle?.id) return;
+
+    setKmLoading(true);
+    try {
+      await atualizarKm(currentVehicle.id, km);
+      dispatch({ type: 'UPDATE_KM', payload: km });
+      setShowKmSheet(false);
+      setToast({ visible: true, message: `Quilometragem atualizada para ${km.toLocaleString('pt-BR')} km`, type: 'success' });
+    } catch {
+      setKmError('Erro ao atualizar. Tente novamente.');
+    } finally {
+      setKmLoading(false);
+    }
+  }
+
+  const QUICK_ACTIONS = [
+    { icon: 'calendar-outline'    as const, label: 'Agendar\nrevisão', onPress: () => router.push('/(tabs)/agendamento') },
+    { icon: 'construct-outline'   as const, label: 'Ver\nhistórico',   onPress: () => router.push('/(tabs)/manutencoes') },
+    { icon: 'speedometer-outline' as const, label: 'Atualizar\nKM',    onPress: openKmSheet },
+    { icon: 'star-outline'        as const, label: 'Meus\npontos',     onPress: () => router.push('/(tabs)/perfil') },
+  ];
+
+  const reportBorderColor =
+    report.overallStatus === 'urgente' ? Colors.danger :
+    report.overallStatus === 'atencao' ? '#F5A623' :
+    Colors.success;
+
+  const reportIconColor = reportBorderColor;
+  const reportIconName =
+    report.overallStatus === 'ok' ? 'checkmark-circle' : 'alert-circle';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -80,7 +135,6 @@ export default function HomeScreen() {
 
         {vehicles.length > 0 ? (
           <>
-            {/* Swiper: negative margin breaks out of scroll padding */}
             <ScrollView
               ref={swiperRef}
               horizontal
@@ -105,20 +159,41 @@ export default function HomeScreen() {
               })}
             </ScrollView>
 
-            {/* Dots indicator */}
             {vehicles.length > 1 && (
               <View style={styles.dotsRow}>
                 {vehicles.map((_, i) => (
-                  <View
-                    key={i}
-                    style={[styles.dot, i === currentIndex && styles.dotActive]}
-                  />
+                  <View key={i} style={[styles.dot, i === currentIndex && styles.dotActive]} />
                 ))}
               </View>
             )}
+
+            {/* ── Diagnóstico ─────────────────────────────────────────── */}
+            <View style={[styles.reportCard, { borderLeftColor: reportBorderColor }]}>
+              <View style={styles.reportHeader}>
+                <Ionicons name={reportIconName} size={18} color={reportIconColor} />
+                <Text style={styles.reportTitle}>Diagnóstico</Text>
+              </View>
+              <Text style={styles.reportSummary}>{report.summary}</Text>
+              {report.highlights.map((h, i) => (
+                <View key={i} style={styles.reportItem}>
+                  <View style={[
+                    styles.reportDot,
+                    { backgroundColor: h.status === 'urgente' ? Colors.danger : '#F5A623' },
+                  ]} />
+                  <Text style={styles.reportItemText}>{h.text}</Text>
+                </View>
+              ))}
+              {report.overallStatus !== 'ok' && (
+                <TouchableOpacity
+                  style={styles.reportCta}
+                  onPress={() => router.push('/(tabs)/agendamento')}
+                >
+                  <Text style={styles.reportCtaText}>Agendar revisão →</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </>
         ) : (
-          /* Empty state */
           <TouchableOpacity
             style={styles.emptyCard}
             onPress={() => router.push('/veiculo/cadastro')}
@@ -139,7 +214,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               key={action.label}
               style={styles.actionCard}
-              onPress={() => router.push(action.route as any)}
+              onPress={action.onPress}
               activeOpacity={0.7}
             >
               <View style={styles.actionIcon}>
@@ -151,6 +226,38 @@ export default function HomeScreen() {
         </View>
 
       </ScrollView>
+
+      {/* ── Km Update BottomSheet ───────────────────────────────────── */}
+      <BottomSheet visible={showKmSheet} onClose={() => setShowKmSheet(false)} title="Atualizar KM">
+        <Text style={styles.sheetSub}>
+          Mantenha o KM atualizado para alertas precisos.
+        </Text>
+        {currentVehicle && (
+          <Text style={styles.sheetCurrentKm}>
+            KM atual: {currentVehicle.currentKm.toLocaleString('pt-BR')} km
+          </Text>
+        )}
+        <Input
+          label="Novo KM"
+          placeholder={`Ex: ${((currentVehicle?.currentKm ?? 0) + 1000).toLocaleString('pt-BR')}`}
+          value={newKm}
+          onChangeText={(v) => { setNewKm(v); setKmError(''); }}
+          error={kmError}
+          keyboardType="number-pad"
+          returnKeyType="done"
+          onSubmitEditing={handleUpdateKm}
+        />
+        <View style={styles.sheetBtn}>
+          <Button label="Atualizar quilometragem" onPress={handleUpdateKm} loading={kmLoading} />
+        </View>
+      </BottomSheet>
+
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={() => setToast((t) => ({ ...t, visible: false }))}
+      />
     </SafeAreaView>
   );
 }
@@ -236,12 +343,8 @@ const styles = StyleSheet.create({
   },
 
   // Swiper
-  swiper: {
-    marginHorizontal: -Spacing.lg,
-  },
-  swiperPage: {
-    // width set dynamically via screenWidth
-  },
+  swiper: { marginHorizontal: -Spacing.lg },
+  swiperPage: {},
   cardWrapper: {
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.sm,
@@ -264,6 +367,64 @@ const styles = StyleSheet.create({
   dotActive: {
     width: 18,
     backgroundColor: Colors.primary,
+  },
+
+  // Report / Diagnóstico
+  reportCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  reportHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  reportTitle: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 12,
+    color: Colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  reportSummary: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 14,
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  reportItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  reportDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  reportItemText: {
+    fontFamily: FontFamily.body,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    flex: 1,
+  },
+  reportCta: {
+    marginTop: Spacing.sm,
+  },
+  reportCtaText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 13,
+    color: Colors.primary,
   },
 
   // Empty state
@@ -340,5 +501,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textPrimary,
     lineHeight: 18,
+  },
+
+  // Km sheet
+  sheetSub: {
+    fontFamily: FontFamily.body,
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.md,
+  },
+  sheetCurrentKm: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 15,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
+  },
+  sheetBtn: {
+    marginTop: Spacing.md,
   },
 });

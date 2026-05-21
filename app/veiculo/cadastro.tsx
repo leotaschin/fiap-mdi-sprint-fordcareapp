@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/Button';
 import { Colors, FontFamily, Spacing } from '@/constants/theme';
 import { FORD_MODELS, COLOR_HEX, COLOR_LABELS, getCarImage, CarColor } from '@/constants/fordModels';
 import { salvarVeiculo } from '@/services/vehicle';
+import { supabase } from '@/services/supabase';
 import { useUser } from '@/contexts/UserContext';
 
 export default function VeiculoCadastroScreen() {
@@ -80,7 +81,11 @@ export default function VeiculoCadastroScreen() {
     const e = validate();
     if (Object.keys(e).length > 0) { setErrors(e); return; }
 
-    const userId = user?.id;
+    let userId = user?.id;
+    if (!userId) {
+      const { data } = await supabase.auth.getSession();
+      userId = data.session?.user?.id;
+    }
     if (!userId) return;
 
     setLoading(true);
