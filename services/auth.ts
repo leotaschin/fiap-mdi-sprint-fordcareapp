@@ -1,38 +1,27 @@
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  updateProfile,
-  signOut,
-  sendPasswordResetEmail,
-} from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from './firebase';
+import { supabase } from './supabase';
 
 export async function cadastrar(name: string, email: string, password: string) {
-  const credential = await createUserWithEmailAndPassword(auth, email, password);
-
-  await updateProfile(credential.user, { displayName: name });
-
-  await setDoc(doc(db, 'users', credential.user.uid), {
-    name,
+  const { data, error } = await supabase.auth.signUp({
     email,
-    points: 0,
-    level: 'bronze',
-    createdAt: serverTimestamp(),
+    password,
+    options: { data: { name } },
   });
-
-  return credential.user;
+  if (error) throw error;
+  return data.user;
 }
 
 export async function login(email: string, password: string) {
-  const credential = await signInWithEmailAndPassword(auth, email, password);
-  return credential.user;
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  return data.user;
 }
 
 export async function logout() {
-  await signOut(auth);
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
 }
 
 export async function esqueceuSenha(email: string) {
-  await sendPasswordResetEmail(auth, email);
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  if (error) throw error;
 }

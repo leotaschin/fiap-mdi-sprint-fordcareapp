@@ -18,13 +18,12 @@ import { Button } from '@/components/ui/Button';
 import { Colors, FontFamily, Spacing } from '@/constants/theme';
 import { FORD_MODELS, COLOR_HEX, COLOR_LABELS, getCarImage, CarColor } from '@/constants/fordModels';
 import { salvarVeiculo } from '@/services/vehicle';
-import { auth } from '@/services/firebase';
 import { useUser } from '@/contexts/UserContext';
 
 export default function VeiculoCadastroScreen() {
   const { back } = useLocalSearchParams<{ back?: string }>();
   const isAddFlow = back === 'true';
-  const { dispatch } = useUser();
+  const { user, dispatch } = useUser();
   const [model, setModel] = useState('');
   const [color, setColor] = useState<CarColor>('black');
   const [year, setYear] = useState('');
@@ -81,7 +80,7 @@ export default function VeiculoCadastroScreen() {
     const e = validate();
     if (Object.keys(e).length > 0) { setErrors(e); return; }
 
-    const userId = auth.currentUser?.uid;
+    const userId = user?.id;
     if (!userId) return;
 
     setLoading(true);

@@ -55,7 +55,8 @@ export default function CadastroScreen() {
       await cadastrar(name.trim(), email.trim(), password);
       router.replace('/veiculo/cadastro');
     } catch (err: any) {
-      if (err.code === 'auth/email-already-in-use') {
+      const msg = err?.message ?? '';
+      if (msg.includes('already registered') || msg.includes('already been registered')) {
         setErrors({ email: 'Esse e-mail já está cadastrado. Que tal fazer login?' });
       } else {
         setErrors({ general: 'Erro ao criar conta. Tente novamente.' });

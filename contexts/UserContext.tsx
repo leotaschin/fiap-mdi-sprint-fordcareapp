@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useEffect, useReducer } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc, collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { User } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { auth, db } from '@/services/firebase';
+import { supabase } from '@/services/supabase';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -43,7 +42,7 @@ type State = {
   profile: UserProfile | null;
   vehicles: Vehicle[];
   selectedVehicleIndex: number;
-  vehicle: Vehicle | null; // = vehicles[selectedVehicleIndex]
+  vehicle: Vehicle | null;
   maintenances: Maintenance[];
 };
 
@@ -61,7 +60,7 @@ type Action =
   | { type: 'UPDATE_POINTS'; payload: { points: number; level: Level } }
   | { type: 'RESET' };
 
-const CACHE_KEY = '@fordcare/user_data';
+const CACHE_KEY = '@fordcare/user_data_v2';
 
 // ─── Reducer ──────────────────────────────────────────────────────────────────
 
@@ -84,13 +83,8 @@ function reducer(state: State, action: Action): State {
     case 'SET_PROFILE':
       return { ...state, profile: action.payload };
     case 'SET_VEHICLES': {
-      const idx = Math.min(state.selectedVehicleIndex, action.payload.length - 1);
-      return {
-        ...state,
-        vehicles: action.payload,
-        selectedVehicleIndex: Math.max(0, idx),
-        vehicle: action.payload[Math.max(0, idx)] ?? null,
-      };
+      const idx = Math.min(state.selectedVehicleIndex, Math.max(0, action.payload.length - 1));
+      return { ...state, vehicles: action.payload, selectedVehicleIndex: idx, vehicle: action.payload[idx] ?? null };
     }
     case 'ADD_VEHICLE':
       return { ...state, vehicles: [...state.vehicles, action.payload] };
@@ -99,9 +93,7 @@ function reducer(state: State, action: Action): State {
       return { ...state, selectedVehicleIndex: idx, vehicle: state.vehicles[idx] ?? null };
     }
     case 'SET_VEHICLE': {
-      const updated = state.vehicles.map((v, i) =>
-        i === state.selectedVehicleIndex ? action.payload : v
-      );
+      const updated = state.vehicles.map((v, i) => i === state.selectedVehicleIndex ? action.payload : v);
       return { ...state, vehicle: action.payload, vehicles: updated };
     }
     case 'SET_MAINTENANCES':
@@ -109,17 +101,13 @@ function reducer(state: State, action: Action): State {
     case 'UPDATE_KM': {
       if (!state.vehicle) return state;
       const updated = { ...state.vehicle, currentKm: action.payload };
-      const updatedVehicles = state.vehicles.map((v, i) =>
-        i === state.selectedVehicleIndex ? updated : v
-      );
+      const updatedVehicles = state.vehicles.map((v, i) => i === state.selectedVehicleIndex ? updated : v);
       return { ...state, vehicle: updated, vehicles: updatedVehicles };
     }
     case 'ADD_MAINTENANCE':
       return { ...state, maintenances: [action.payload, ...state.maintenances] };
     case 'UPDATE_POINTS':
-      return state.profile
-        ? { ...state, profile: { ...state.profile, ...action.payload } }
-        : state;
+      return state.profile ? { ...state, profile: { ...state.profile, ...action.payload } } : state;
     case 'RESET':
       return { ...initialState, initialized: true };
     default:
@@ -127,72 +115,58 @@ function reducer(state: State, action: Action): State {
   }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Data loader ──────────────────────────────────────────────────────────────
 
-function toDate(value: any): Date {
-  if (!value) return new Date();
-  if (value instanceof Date) return value;
-  if (value?.toDate) return value.toDate();
-  return new Date(value);
-}
+async function loadUserData(userId: string, dispatch: React.Dispatch<Action>) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
 
-function docToVehicle(vDoc: any): Vehicle {
-  const d = vDoc.data();
-  return {
-    id: vDoc.id,
-    brand: 'Ford',
-    model: d.model ?? '',
-    color: d.color ?? 'black',
-    year: d.year ?? 0,
-    currentKm: d.currentKm ?? 0,
-    lastServiceKm: d.lastServiceKm ?? 0,
-    lastServiceDate: toDate(d.lastServiceDate),
-  };
-}
-
-async function loadFromFirestore(uid: string, dispatch: React.Dispatch<Action>) {
-  const userSnap = await getDoc(doc(db, 'users', uid));
-  if (!userSnap.exists()) return;
-
-  const data = userSnap.data();
-  const profile: UserProfile = {
-    uid,
-    name: data.name ?? '',
-    email: data.email ?? '',
-    points: data.points ?? 0,
-    level: data.level ?? 'bronze',
-  };
-  dispatch({ type: 'SET_PROFILE', payload: profile });
-
-  const vehiclesSnap = await getDocs(collection(db, 'users', uid, 'vehicles'));
-  const vehicles: Vehicle[] = vehiclesSnap.docs.map(docToVehicle);
-  dispatch({ type: 'SET_VEHICLES', payload: vehicles });
-
-  if (vehicles.length > 0) {
-    const mQuery = query(
-      collection(db, 'users', uid, 'maintenances'),
-      orderBy('date', 'desc')
-    );
-    const mSnap = await getDocs(mQuery);
-    const maintenances: Maintenance[] = mSnap.docs.map((d) => {
-      const m = d.data();
-      return {
-        id: d.id,
-        type: m.type ?? '',
-        date: toDate(m.date),
-        km: m.km ?? 0,
-        dealership: m.dealership ?? '',
-        notes: m.notes ?? '',
-        pointsEarned: m.pointsEarned ?? 0,
-      };
+  if (profile) {
+    dispatch({
+      type: 'SET_PROFILE',
+      payload: { uid: userId, name: profile.name, email: profile.email, points: profile.points, level: profile.level },
     });
-    dispatch({ type: 'SET_MAINTENANCES', payload: maintenances });
-
-    await AsyncStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify({ profile, vehicles, maintenances })
-    );
   }
+
+  const { data: vehicles } = await supabase
+    .from('vehicles')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
+
+  const mappedVehicles: Vehicle[] = (vehicles ?? []).map((v) => ({
+    id: v.id,
+    brand: 'Ford' as const,
+    model: v.model,
+    color: v.color,
+    year: v.year,
+    currentKm: v.current_km,
+    lastServiceKm: v.last_service_km,
+    lastServiceDate: new Date(v.last_service_date),
+  }));
+  dispatch({ type: 'SET_VEHICLES', payload: mappedVehicles });
+
+  const { data: maintenances } = await supabase
+    .from('maintenances')
+    .select('*')
+    .eq('user_id', userId)
+    .order('date', { ascending: false });
+
+  const mappedMaint: Maintenance[] = (maintenances ?? []).map((m) => ({
+    id: m.id,
+    type: m.type,
+    date: new Date(m.date),
+    km: m.km,
+    dealership: m.dealership ?? '',
+    notes: m.notes ?? '',
+    pointsEarned: m.points_earned,
+  }));
+  dispatch({ type: 'SET_MAINTENANCES', payload: mappedMaint });
+
+  await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ profile, vehicles: mappedVehicles, maintenances: mappedMaint }));
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -210,24 +184,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       try {
         const cached = JSON.parse(raw);
         if (cached.profile) dispatch({ type: 'SET_PROFILE', payload: cached.profile });
-
-        // Support both old single-vehicle cache and new multi-vehicle cache
         if (cached.vehicles?.length) {
           dispatch({
             type: 'SET_VEHICLES',
-            payload: cached.vehicles.map((v: any) => ({
-              ...v,
-              lastServiceDate: new Date(v.lastServiceDate),
-            })),
-          });
-        } else if (cached.vehicle) {
-          dispatch({
-            type: 'SET_VEHICLES',
-            payload: [{ ...cached.vehicle, lastServiceDate: new Date(cached.vehicle.lastServiceDate) }],
+            payload: cached.vehicles.map((v: any) => ({ ...v, lastServiceDate: new Date(v.lastServiceDate) })),
           });
         }
-
-        if (cached.maintenances) {
+        if (cached.maintenances?.length) {
           dispatch({
             type: 'SET_MAINTENANCES',
             payload: cached.maintenances.map((m: any) => ({ ...m, date: new Date(m.date) })),
@@ -236,11 +199,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       } catch {}
     });
 
-    const unsub = onAuthStateChanged(auth, async (user) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const user = session?.user ?? null;
       dispatch({ type: 'SET_USER', payload: user });
 
       if (user) {
-        await loadFromFirestore(user.uid, dispatch);
+        await loadUserData(user.id, dispatch);
       } else {
         await AsyncStorage.removeItem(CACHE_KEY);
         dispatch({ type: 'RESET' });
@@ -249,7 +213,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'SET_INITIALIZED' });
     });
 
-    return unsub;
+    return () => subscription.unsubscribe();
   }, []);
 
   return (

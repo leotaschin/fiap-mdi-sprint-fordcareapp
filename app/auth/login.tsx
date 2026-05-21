@@ -43,8 +43,8 @@ export default function LoginScreen() {
       await login(email.trim(), password);
       router.replace('/(tabs)/home');
     } catch (err: any) {
-      const code = err.code ?? '';
-      if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+      const msg = err?.message ?? '';
+      if (msg.includes('Invalid login credentials') || msg.includes('invalid_credentials')) {
         setErrors({ general: 'E-mail ou senha incorretos. Tente novamente.' });
       } else {
         setErrors({ general: 'Erro ao entrar. Tente novamente.' });

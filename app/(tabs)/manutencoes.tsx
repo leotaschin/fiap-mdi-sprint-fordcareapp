@@ -133,7 +133,8 @@ export default function ManutencoesScreen() {
 
     setRegLoading(true);
     try {
-      const id = await registrarManutencao(user.uid, {
+      const id = await registrarManutencao(user.id, {
+        vehicleId: vehicle.id,
         type: regType,
         date,
         km,
@@ -142,7 +143,7 @@ export default function ManutencoesScreen() {
         pointsEarned,
       });
 
-      await atualizarServico(user.uid, vehicle.id, km, date);
+      await atualizarServico(vehicle.id, km, date);
 
       const newPoints = profile.points + pointsEarned;
       dispatch({

@@ -1,12 +1,4 @@
-import {
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  getDocs,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { db } from './firebase';
+import { supabase } from './supabase';
 
 export type VehicleData = {
   brand: 'Ford';
@@ -18,26 +10,47 @@ export type VehicleData = {
   lastServiceDate: Date;
 };
 
-export async function salvarVeiculo(userId: string, data: VehicleData) {
-  const ref = await addDoc(collection(db, 'users', userId, 'vehicles'), {
-    ...data,
-    lastServiceDate: data.lastServiceDate,
-    createdAt: serverTimestamp(),
-  });
-  return ref.id;
+export async function salvarVeiculo(userId: string, data: VehicleData): Promise<string> {
+  const { data: vehicle, error } = await supabase
+    .from('vehicles')
+    .insert({
+      user_id: userId,
+      brand: data.brand,
+      model: data.model,
+      color: data.color,
+      year: data.year,
+      current_km: data.currentKm,
+      last_service_km: data.lastServiceKm,
+      last_service_date: data.lastServiceDate.toISOString(),
+    })
+    .select('id')
+    .single();
+  if (error) throw error;
+  return vehicle.id;
 }
 
-export async function atualizarKm(userId: string, vehicleId: string, newKm: number) {
-  const ref = doc(db, 'users', userId, 'vehicles', vehicleId);
-  await updateDoc(ref, { currentKm: newKm });
+export async function atualizarKm(vehicleId: string, newKm: number) {
+  const { error } = await supabase
+    .from('vehicles')
+    .update({ current_km: newKm })
+    .eq('id', vehicleId);
+  if (error) throw error;
+}
+
+export async function atualizarServico(vehicleId: string, km: number, date: Date) {
+  const { error } = await supabase
+    .from('vehicles')
+    .update({ last_service_km: km, last_service_date: date.toISOString() })
+    .eq('id', vehicleId);
+  if (error) throw error;
 }
 
 export async function buscarVeiculos(userId: string) {
-  const snap = await getDocs(collection(db, 'users', userId, 'vehicles'));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-}
-
-export async function atualizarServico(userId: string, vehicleId: string, km: number, date: Date) {
-  const ref = doc(db, 'users', userId, 'vehicles', vehicleId);
-  await updateDoc(ref, { lastServiceKm: km, lastServiceDate: date });
+  const { data, error } = await supabase
+    .from('vehicles')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
 }
