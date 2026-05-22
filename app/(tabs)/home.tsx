@@ -86,10 +86,8 @@ export default function HomeScreen() {
   }
 
   const QUICK_ACTIONS = [
-    { icon: 'calendar-outline'    as const, label: 'Agendar\nrevisão', onPress: () => router.push('/(tabs)/agendamento') },
-    { icon: 'construct-outline'   as const, label: 'Ver\nhistórico',   onPress: () => router.push('/(tabs)/manutencoes') },
-    { icon: 'speedometer-outline' as const, label: 'Atualizar\nKM',    onPress: openKmSheet },
-    { icon: 'star-outline'        as const, label: 'Meus\npontos',     onPress: () => router.push('/(tabs)/perfil') },
+    { icon: 'speedometer-outline' as const, label: 'Atualizar\nKM', onPress: openKmSheet },
+    { icon: 'star-outline'        as const, label: 'Meus\npontos',   onPress: () => router.push('/(tabs)/perfil') },
   ];
 
   const reportBorderColor =
