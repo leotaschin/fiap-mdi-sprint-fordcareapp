@@ -117,17 +117,63 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=sua_chave_aqui
 
 > 🎬 [Assista ao vídeo de demonstração](#) *(link será adicionado antes da entrega)*
 
-### Telas
+---
 
-| Home | Manutenções | Agendamento |
-|------|-------------|-------------|
-| ![Home](assets/screenshots/home.png) | ![Manutencoes](assets/screenshots/manutencoes.png) | ![Agendamento](assets/screenshots/agendamento.png) |
+### Autenticação
 
-| Novo Agendamento | Detalhe | Perfil |
-|-----------------|---------|--------|
-| ![Novo](assets/screenshots/novo_agendamento.png) | ![Detalhe](assets/screenshots/detalhe_agendamento.png) | ![Perfil](assets/screenshots/perfil.png) |
+Telas de entrada do app — boas-vindas, login e criação de conta com validação de campos em tempo real.
 
-> 📸 *Screenshots serão adicionados antes da entrega final.*
+| Boas-vindas | Login | Cadastro |
+|:-----------:|:-----:|:--------:|
+| ![Boas-vindas](assets/screenshots/auth/WelcomeScreen.png) | ![Login](assets/screenshots/auth/LoginScreen.png) | ![Cadastro](assets/screenshots/auth/RegisterScreen.png) |
+
+---
+
+### Home — Painel do Veículo
+
+Visão geral do veículo com swiper de modelos, status de alertas e atalhos rápidos. O card muda de cor conforme a urgência dos alertas.
+
+| Veículo em dia | Alertas ativos | Registrar veículo |
+|:--------------:|:--------------:|:-----------------:|
+| ![Home sem alertas](assets/screenshots/home/HomeCarNoError.png) | ![Home com alertas](assets/screenshots/home/HomeCarrError.png) | ![Registrar carro](assets/screenshots/home/RegistrarCarro.png) |
+
+| Atualizar quilometragem |
+|:-----------------------:|
+| ![Atualizar KM](assets/screenshots/home/AtualizarKM.png) |
+
+---
+
+### Manutenções — Alertas e Histórico
+
+Alertas calculados individualmente por tipo de serviço (óleo, revisão, pneus, filtro). O histórico agrupa manutenções por sessão de visita à concessionária.
+
+| Alertas ativos | Sem alertas | Histórico |
+|:--------------:|:-----------:|:---------:|
+| ![Alertas](assets/screenshots/manutencao/ManutencaoAlerta.png) | ![Sem alertas](assets/screenshots/manutencao/manutencaoNoAlert.png) | ![Histórico](assets/screenshots/manutencao/HistoricoAlerta.png) |
+
+---
+
+### Agendamento
+
+Fluxo completo de agendamento em 3 etapas: escolha do veículo, seleção da concessionária e revisão dos serviços. Inclui lista de agendamentos com filtros por status.
+
+| Concessionárias | Selecionar veículo | Escolher serviços |
+|:---------------:|:-----------------:|:-----------------:|
+| ![Concessionárias](assets/screenshots/agendamento/Concessionarias.png) | ![Seletor](assets/screenshots/agendamento/AgendarSelector.png) | ![Problemas](assets/screenshots/agendamento/AgendarProblemas.png) |
+
+| Revisão do agendamento | Confirmar | Lista de agendamentos |
+|:----------------------:|:---------:|:---------------------:|
+| ![Revisão](assets/screenshots/agendamento/AgendarReview.png) | ![Confirmar](assets/screenshots/agendamento/ConfirmarAgendamento.png) | ![Agendamentos](assets/screenshots/agendamento/Agendamentos.png) |
+
+---
+
+### Perfil — Pontos e Benefícios
+
+Saldo de pontos FordCare, nível do usuário (Bronze / Prata / Ouro), barra de progresso, lista de como ganhar pontos e benefícios disponíveis para resgate.
+
+| Perfil — pontos e nível | Benefícios e configurações |
+|:-----------------------:|:--------------------------:|
+| ![Perfil 1](assets/screenshots/perfil/PerfilScreen1.png) | ![Perfil 2](assets/screenshots/perfil/PerfilScren2.png) |
 
 ---
 

@@ -119,7 +119,7 @@ export default function PerfilScreen() {
             </Text>
             {vehicle && (
               <View style={styles.vehicleRow}>
-                <Ionicons name="car-outline" size={12} color="rgba(255,255,255,0.6)" />
+                <Ionicons name="car-outline" size={12} color={Colors.textSecondary} />
                 <Text style={styles.vehicleText}>
                   Ford {vehicle.model} {vehicle.year}
                 </Text>
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F4F6FA' },
 
   // Header
-  safeHeader: { backgroundColor: Colors.primary },
+  safeHeader: { backgroundColor: '#FFFFFF' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -273,13 +273,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.sm,
     paddingBottom: Spacing.lg,
-    backgroundColor: Colors.primary,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E8ECF2',
   },
   avatarWrap: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(0,52,120,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -287,18 +289,18 @@ const styles = StyleSheet.create({
   avatarText: {
     fontFamily: FontFamily.display,
     fontSize: 22,
-    color: '#FFFFFF',
+    color: Colors.primary,
   },
   headerInfo: { flex: 1, gap: 2 },
   headerName: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 16,
-    color: '#FFFFFF',
+    color: Colors.textPrimary,
   },
   headerEmail: {
     fontFamily: FontFamily.body,
     fontSize: 12,
-    color: 'rgba(255,255,255,0.65)',
+    color: Colors.textSecondary,
   },
   vehicleRow: {
     flexDirection: 'row',
@@ -309,7 +311,7 @@ const styles = StyleSheet.create({
   vehicleText: {
     fontFamily: FontFamily.body,
     fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
+    color: Colors.textSecondary,
   },
   levelBadge: {
     borderRadius: 999,
