@@ -16,6 +16,7 @@ import { AgendamentoCarCard } from '@/components/AgendamentoCarCard';
 import { ReviewCarCard } from '@/components/ReviewCarCard';
 import { FORD_DEALERSHIPS, Dealership } from '@/constants/fordDealerships';
 import { criarAgendamento } from '@/services/agendamentos';
+import { agendarLembrete, requestNotificationPermission } from '@/services/notifications';
 import { Colors, FontFamily, Spacing } from '@/constants/theme';
 import { Vehicle } from '@/contexts/UserContext';
 
@@ -102,6 +103,19 @@ export default function NovoAgendamento() {
         dealershipName: selectedDealer.name,
         problems: selectedProblems,
       });
+
+      const granted = await requestNotificationPermission();
+      if (granted) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(9, 0, 0, 0);
+        await agendarLembrete(
+          'Lembrete FordCare 🔧',
+          `Sua revisão do Ford ${selectedVehicle.model} está agendada na ${selectedDealer.name}.`,
+          tomorrow,
+        );
+      }
+
       router.replace('/(tabs)/agendamento');
     } catch (err: any) {
       console.error('[agendamento] erro:', err?.message ?? err);
