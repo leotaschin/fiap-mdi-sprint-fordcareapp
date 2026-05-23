@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useUser } from '@/contexts/UserContext';
-import { Vehicle } from '@/contexts/UserContext';
+import { Vehicle, Maintenance } from '@/contexts/UserContext';
 import { MAINTENANCE_RULES, ALERT_THRESHOLD_KM, ALERT_THRESHOLD_DAYS } from '@/constants/maintenanceRules';
 import { daysSince } from '@/utils/daysSince';
 
@@ -14,14 +14,23 @@ export type Alert = {
   points: number;
 };
 
-export function computeAlerts(vehicle: Vehicle | null): Alert[] {
+export function computeAlerts(vehicle: Vehicle | null, maintenances: Maintenance[]): Alert[] {
   if (!vehicle) return [];
 
-  const kmSinceService = vehicle.currentKm - vehicle.lastServiceKm;
-  const daysSinceService = daysSince(vehicle.lastServiceDate);
-
   return MAINTENANCE_RULES.map((rule) => {
-    const kmRemaining = rule.intervalKm - kmSinceService;
+    // Find the most recent maintenance record for this specific service type
+    const lastOfType = maintenances
+      .filter((m) => m.type === rule.type)
+      .sort((a, b) => b.date.getTime() - a.date.getTime())[0];
+
+    // Fall back to vehicle's global last service if no specific record exists
+    const baseKm   = lastOfType?.km   ?? vehicle.lastServiceKm;
+    const baseDate = lastOfType?.date ?? vehicle.lastServiceDate;
+
+    const kmSinceService  = vehicle.currentKm - baseKm;
+    const daysSinceService = daysSince(baseDate);
+
+    const kmRemaining   = rule.intervalKm   - kmSinceService;
     const daysRemaining = rule.intervalDays - daysSinceService;
 
     let status: AlertStatus = 'ok';
@@ -36,6 +45,6 @@ export function computeAlerts(vehicle: Vehicle | null): Alert[] {
 }
 
 export function useAlerts(): Alert[] {
-  const { vehicle } = useUser();
-  return useMemo(() => computeAlerts(vehicle), [vehicle]);
+  const { vehicle, maintenances } = useUser();
+  return useMemo(() => computeAlerts(vehicle, maintenances), [vehicle, maintenances]);
 }

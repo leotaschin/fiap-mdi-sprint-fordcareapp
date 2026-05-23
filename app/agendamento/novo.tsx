@@ -52,7 +52,7 @@ function SectionTitle({ children }: { children: string }) {
 
 export default function NovoAgendamento() {
   const { dealershipId, alertType } = useLocalSearchParams<{ dealershipId?: string; alertType?: string }>();
-  const { user, vehicles } = useUser();
+  const { user, vehicles, maintenances } = useUser();
 
   const preselectedDealer = useMemo(
     () => FORD_DEALERSHIPS.find((d) => d.id === dealershipId) ?? null,
@@ -69,7 +69,7 @@ export default function NovoAgendamento() {
   const [error, setError] = useState('');
 
   const vehicleAlerts = useMemo(() => {
-    return computeAlerts(selectedVehicle).filter((a) => a.status !== 'ok');
+    return computeAlerts(selectedVehicle, maintenances).filter((a) => a.status !== 'ok');
   }, [selectedVehicle]);
 
   function goBack() {

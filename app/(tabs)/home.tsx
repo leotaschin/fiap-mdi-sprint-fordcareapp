@@ -22,7 +22,7 @@ import { Toast } from '@/components/ui/Toast';
 import { Colors, FontFamily, Spacing } from '@/constants/theme';
 
 export default function HomeScreen() {
-  const { profile, vehicles, selectedVehicleIndex, dispatch } = useUser();
+  const { profile, vehicles, maintenances, selectedVehicleIndex, dispatch } = useUser();
   const { width: screenWidth } = useWindowDimensions();
   const swiperRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -35,7 +35,7 @@ export default function HomeScreen() {
 
   const firstName = profile?.name?.split(' ')[0] ?? 'você';
   const currentVehicle = vehicles[currentIndex] ?? null;
-  const currentAlerts = computeAlerts(currentVehicle);
+  const currentAlerts = computeAlerts(currentVehicle, maintenances);
   const report = generateReport(currentAlerts);
 
   useEffect(() => {
@@ -142,7 +142,7 @@ export default function HomeScreen() {
               style={styles.swiper}
             >
               {vehicles.map((v) => {
-                const vehicleAlerts = computeAlerts(v);
+                const vehicleAlerts = computeAlerts(v, maintenances);
                 return (
                   <View key={v.id} style={[styles.swiperPage, { width: screenWidth }]}>
                     <View style={styles.cardWrapper}>

@@ -2,6 +2,7 @@ import { TouchableOpacity, View, Text, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { computeAlerts } from '@/hooks/useAlerts';
 import { Vehicle } from '@/contexts/UserContext';
+import { useUser } from '@/contexts/UserContext';
 import { getCarImage, COLOR_HEX } from '@/constants/fordModels';
 import { Colors, FontFamily, Spacing } from '@/constants/theme';
 
@@ -12,7 +13,8 @@ type Props = {
 };
 
 export function AgendamentoCarCard({ vehicle, isSelected, onPress }: Props) {
-  const alerts = computeAlerts(vehicle).filter((a) => a.status !== 'ok');
+  const { maintenances } = useUser();
+  const alerts = computeAlerts(vehicle, maintenances).filter((a) => a.status !== 'ok');
   const urgente = alerts.filter((a) => a.status === 'urgente').length;
   const atencao = alerts.filter((a) => a.status === 'atencao').length;
 
