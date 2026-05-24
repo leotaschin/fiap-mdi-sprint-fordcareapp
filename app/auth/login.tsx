@@ -42,10 +42,12 @@ export default function LoginScreen() {
     setErrors({});
     setLoading(true);
     try {
-      await login(email.trim(), password);
-      await logAuditEvent({ action: 'LOGIN', status: 'success' });
+      const user = await login(email.trim(), password);
+      await logAuditEvent({ userId: user?.id, action: 'LOGIN', status: 'success' });
       router.replace('/(tabs)/home');
     } catch (err) {
+      // Falha de login: usuário ainda não autenticado, user_id fica null
+      // A policy RLS permite INSERT com user_id NULL para registrar tentativas falhas
       await logAuditEvent({ action: 'LOGIN', status: 'failure' });
       setErrors({ general: safeErrorMessage(err, 'Erro ao entrar. Tente novamente.') });
     } finally {
