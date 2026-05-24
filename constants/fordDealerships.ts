@@ -117,4 +117,17 @@ export const FORD_DEALERSHIPS: Dealership[] = [
     latitude: -23.5320,
     longitude: -46.7790,
   },
+   {
+    id: '9',
+    name: 'Ford Chibarro — Araraquara',
+    address: 'Av. Antônio Pinto Duarte, 900',
+    neighborhood: 'Jardim Araraquara',
+    city: 'Araraquara',
+    phone: '(16) 3336-9000',
+    hours: 'Seg–Sex 8h–18h · Sáb 8h–12h',
+    openWeekday: [8, 18],
+    openSaturday: [8, 12],
+    latitude: -21.7946,
+    longitude: -48.1766,
+  },
 ];
