@@ -16,6 +16,8 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Colors, FontFamily, Spacing } from '@/constants/theme';
 import { cadastrar } from '@/services/auth';
+import { logAuditEvent } from '@/services/auditLog';
+import { safeErrorMessage } from '@/utils/safeError';
 
 export default function CadastroScreen() {
   const [name, setName] = useState('');
@@ -57,16 +59,11 @@ export default function CadastroScreen() {
     setLoading(true);
     try {
       await cadastrar(name.trim(), email.trim(), password);
+      await logAuditEvent({ action: 'REGISTER', status: 'success' });
       router.replace('/veiculo/cadastro');
-    } catch (err: any) {
-      const msg = err?.message ?? '';
-      if (msg === 'EMAIL_CONFIRMATION_REQUIRED') {
-        setErrors({ general: 'Confirmação de e-mail necessária. Desative "Confirm email" no painel do Supabase.' });
-      } else if (msg.includes('already registered') || msg.includes('already been registered') || msg.includes('User already registered')) {
-        setErrors({ email: 'Esse e-mail já está cadastrado. Que tal fazer login?' });
-      } else {
-        setErrors({ general: `Erro: ${msg || 'Tente novamente.'}` });
-      }
+    } catch (err) {
+      await logAuditEvent({ action: 'REGISTER', status: 'failure' });
+      setErrors({ general: safeErrorMessage(err, 'Não foi possível criar sua conta. Tente novamente.') });
     } finally {
       setLoading(false);
     }

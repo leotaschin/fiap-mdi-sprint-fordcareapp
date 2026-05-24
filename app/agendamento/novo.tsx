@@ -17,6 +17,8 @@ import { ReviewCarCard } from '@/components/ReviewCarCard';
 import { FORD_DEALERSHIPS, Dealership } from '@/constants/fordDealerships';
 import { criarAgendamento } from '@/services/agendamentos';
 import { agendarLembrete, requestNotificationPermission } from '@/services/notifications';
+import { logAuditEvent } from '@/services/auditLog';
+import { safeErrorMessage } from '@/utils/safeError';
 import { Colors, FontFamily, Spacing } from '@/constants/theme';
 import { Vehicle } from '@/contexts/UserContext';
 
@@ -104,6 +106,13 @@ export default function NovoAgendamento() {
         problems: selectedProblems,
       });
 
+      await logAuditEvent({
+        userId: user.id,
+        action: 'CREATE_AGENDAMENTO',
+        status: 'success',
+        metadata: { dealership: selectedDealer.name, vehicle: selectedVehicle.model, services: selectedProblems.length },
+      });
+
       const granted = await requestNotificationPermission();
       if (granted) {
         const tomorrow = new Date();
@@ -117,8 +126,9 @@ export default function NovoAgendamento() {
       }
 
       router.replace('/(tabs)/agendamento');
-    } catch (err: any) {
-      setError(err?.message ?? 'Erro ao salvar agendamento. Tente novamente.');
+    } catch (err) {
+      await logAuditEvent({ userId: user.id, action: 'CREATE_AGENDAMENTO', status: 'failure' });
+      setError(safeErrorMessage(err, 'Erro ao salvar agendamento. Tente novamente.'));
     } finally {
       setLoading(false);
     }

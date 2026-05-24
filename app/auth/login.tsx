@@ -16,6 +16,8 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Colors, FontFamily, Spacing } from '@/constants/theme';
 import { login, esqueceuSenha } from '@/services/auth';
+import { logAuditEvent } from '@/services/auditLog';
+import { safeErrorMessage } from '@/utils/safeError';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -41,14 +43,11 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await login(email.trim(), password);
+      await logAuditEvent({ action: 'LOGIN', status: 'success' });
       router.replace('/(tabs)/home');
-    } catch (err: any) {
-      const msg = err?.message ?? '';
-      if (msg.includes('Invalid login credentials') || msg.includes('invalid_credentials')) {
-        setErrors({ general: 'E-mail ou senha incorretos. Tente novamente.' });
-      } else {
-        setErrors({ general: 'Erro ao entrar. Tente novamente.' });
-      }
+    } catch (err) {
+      await logAuditEvent({ action: 'LOGIN', status: 'failure' });
+      setErrors({ general: safeErrorMessage(err, 'Erro ao entrar. Tente novamente.') });
     } finally {
       setLoading(false);
     }

@@ -13,6 +13,8 @@ import { atualizarServico } from '@/services/vehicle';
 import { ReviewCarCard } from '@/components/ReviewCarCard';
 import { MAINTENANCE_RULES } from '@/constants/maintenanceRules';
 import { Colors, FontFamily, Spacing } from '@/constants/theme';
+import { logAuditEvent } from '@/services/auditLog';
+import { safeErrorMessage } from '@/utils/safeError';
 
 const SERVICE_ICONS: Record<string, React.ComponentProps<typeof Ionicons>['name']> = {
   'Troca de Óleo':    'water-outline',
@@ -103,10 +105,19 @@ export default function AgendamentoDetalhe() {
         });
       }
 
+      await logAuditEvent({
+        userId: user.id,
+        action: 'CONFIRM_AGENDAMENTO',
+        resource: agendamento.id,
+        status: 'success',
+        metadata: { services: agendamento.problems.length, points_earned: earnedTotal },
+      });
+
       setAgendamento((prev) => prev ? { ...prev, status: 'concluido' } : prev);
       router.navigate({ pathname: '/(tabs)/agendamento', params: { confirmedId: agendamento.id } });
-    } catch (err: any) {
-      setError(err?.message ?? 'Erro ao confirmar revisão. Tente novamente.');
+    } catch (err) {
+      await logAuditEvent({ userId: user.id, action: 'CONFIRM_AGENDAMENTO', resource: agendamento.id, status: 'failure' });
+      setError(safeErrorMessage(err, 'Erro ao confirmar revisão. Tente novamente.'));
     } finally {
       setConfirming(false);
     }
