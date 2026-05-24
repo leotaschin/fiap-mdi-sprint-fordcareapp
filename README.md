@@ -115,7 +115,7 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=sua_chave_aqui
 
 ### Fluxo Principal
 
-> 🎬 [Assista ao vídeo de demonstração](#) *(link será adicionado antes da entrega)*
+> 🎬 [Assista ao vídeo de demonstração](https://youtu.be/k4LCsOa3wgM)
 
 ---
 
