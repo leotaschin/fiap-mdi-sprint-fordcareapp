@@ -1,15 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
-const SUPABASE_URL = 'https://ljvuynddfkgnaagcdvaz.supabase.co';
-const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqdnV5bmRkZmtnbmFhZ2NkdmF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzODYxODYsImV4cCI6MjA5NDk2MjE4Nn0.8cP3toMJkxCMj7bS549P6Hu5mmHP2skxY32LcG8yh24';
+// ─── Chaves carregadas do .env (nunca hardcoded) ──────────────────────────────
+const SUPABASE_URL      = process.env.EXPO_PUBLIC_SUPABASE_URL      ?? '';
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+
+// ─── Adaptador seguro: substitui AsyncStorage por SecureStore ─────────────────
+// SecureStore usa Keychain (iOS) e EncryptedSharedPreferences (Android),
+// mantendo o token de sessão criptografado em repouso no dispositivo.
+const SecureStoreAdapter = {
+  getItem:    (key: string)                => SecureStore.getItemAsync(key),
+  setItem:    (key: string, value: string) => SecureStore.setItemAsync(key, value),
+  removeItem: (key: string)                => SecureStore.deleteItemAsync(key),
+};
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    storage: AsyncStorage,
+    storage:          SecureStoreAdapter,
     autoRefreshToken: true,
-    persistSession: true,
+    persistSession:   true,
     detectSessionInUrl: false,
   },
 });

@@ -90,10 +90,12 @@ export default function LoginScreen() {
               label="E-mail"
               placeholder="seu@email.com"
               value={email}
-              onChangeText={(v) => { setEmail(v); setErrors((p) => ({ ...p, email: '', general: '' })); }}
+              onChangeText={(v) => { setEmail(v.trim()); setErrors((p) => ({ ...p, email: '', general: '' })); }}
               error={errors.email}
               keyboardType="email-address"
               autoCapitalize="none"
+              autoCorrect={false}
+              maxLength={100}
               returnKeyType="next"
               onSubmitEditing={() => passwordRef.current?.focus()}
             />
@@ -107,6 +109,7 @@ export default function LoginScreen() {
                 onChangeText={(v) => { setPassword(v); setErrors((p) => ({ ...p, password: '', general: '' })); }}
                 error={errors.password}
                 secureTextEntry={!showPassword}
+                maxLength={72}
                 returnKeyType="done"
                 onSubmitEditing={handleLogin}
               />

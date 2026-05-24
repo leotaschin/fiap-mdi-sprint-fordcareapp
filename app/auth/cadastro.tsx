@@ -33,9 +33,13 @@ export default function CadastroScreen() {
 
   function validate() {
     const e: Record<string, string> = {};
+    // Nome: apenas letras, espaços e acentos — sem caracteres especiais
     if (!name.trim()) e.name = 'Este campo é obrigatório';
+    else if (!/^[\p{L}\s'-]{2,80}$/u.test(name.trim())) e.name = 'Nome inválido';
+    // E-mail: formato padrão RFC estrito
     if (!email.trim()) e.email = 'Este campo é obrigatório';
-    else if (!/\S+@\S+\.\S+/.test(email)) e.email = 'E-mail inválido';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) e.email = 'E-mail inválido';
+    // Senha: mínimo 6, máximo 72 (limite do bcrypt do Supabase)
     if (!password) e.password = 'Este campo é obrigatório';
     else if (password.length < 6) e.password = 'Mínimo de 6 caracteres';
     if (!confirmPassword) e.confirmPassword = 'Este campo é obrigatório';
@@ -97,6 +101,7 @@ export default function CadastroScreen() {
               error={errors.name}
               autoCapitalize="words"
               returnKeyType="next"
+              maxLength={80}
               onSubmitEditing={() => emailRef.current?.focus()}
             />
 
@@ -105,10 +110,12 @@ export default function CadastroScreen() {
               label="E-mail"
               placeholder="seu@email.com"
               value={email}
-              onChangeText={(v) => { setEmail(v); setErrors((p) => ({ ...p, email: '' })); }}
+              onChangeText={(v) => { setEmail(v.trim()); setErrors((p) => ({ ...p, email: '' })); }}
               error={errors.email}
               keyboardType="email-address"
               autoCapitalize="none"
+              autoCorrect={false}
+              maxLength={100}
               returnKeyType="next"
               onSubmitEditing={() => passwordRef.current?.focus()}
             />
@@ -122,6 +129,7 @@ export default function CadastroScreen() {
                 onChangeText={(v) => { setPassword(v); setErrors((p) => ({ ...p, password: '' })); }}
                 error={errors.password}
                 secureTextEntry={!showPassword}
+                maxLength={72}
                 returnKeyType="next"
                 onSubmitEditing={() => confirmRef.current?.focus()}
               />
@@ -146,6 +154,7 @@ export default function CadastroScreen() {
                 onChangeText={(v) => { setConfirmPassword(v); setErrors((p) => ({ ...p, confirmPassword: '' })); }}
                 error={errors.confirmPassword}
                 secureTextEntry={!showConfirm}
+                maxLength={72}
                 returnKeyType="done"
                 onSubmitEditing={handleCadastro}
               />

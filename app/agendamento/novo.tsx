@@ -118,7 +118,6 @@ export default function NovoAgendamento() {
 
       router.replace('/(tabs)/agendamento');
     } catch (err: any) {
-      console.error('[agendamento] erro:', err?.message ?? err);
       setError(err?.message ?? 'Erro ao salvar agendamento. Tente novamente.');
     } finally {
       setLoading(false);

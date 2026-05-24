@@ -206,9 +206,10 @@ export default function VeiculoCadastroScreen() {
               label="Ano do veículo"
               placeholder="Ex: 2022"
               value={year}
-              onChangeText={(v) => { setYear(v); setErrors((p) => ({ ...p, year: '' })); }}
+              onChangeText={(v) => { setYear(v.replace(/\D/g, '')); setErrors((p) => ({ ...p, year: '' })); }}
               error={errors.year}
               keyboardType="number-pad"
+              maxLength={4}
               returnKeyType="next"
               onSubmitEditing={() => kmRef.current?.focus()}
             />
@@ -217,9 +218,10 @@ export default function VeiculoCadastroScreen() {
               label="KM atual"
               placeholder="Ex: 38000"
               value={currentKm}
-              onChangeText={(v) => { setCurrentKm(v); setErrors((p) => ({ ...p, currentKm: '' })); }}
+              onChangeText={(v) => { setCurrentKm(v.replace(/\D/g, '')); setErrors((p) => ({ ...p, currentKm: '' })); }}
               error={errors.currentKm}
               keyboardType="number-pad"
+              maxLength={7}
               returnKeyType="next"
               onSubmitEditing={() => lastKmRef.current?.focus()}
             />
@@ -228,9 +230,10 @@ export default function VeiculoCadastroScreen() {
               label="KM da última revisão"
               placeholder="Ex: 30000"
               value={lastServiceKm}
-              onChangeText={(v) => { setLastServiceKm(v); setErrors((p) => ({ ...p, lastServiceKm: '' })); }}
+              onChangeText={(v) => { setLastServiceKm(v.replace(/\D/g, '')); setErrors((p) => ({ ...p, lastServiceKm: '' })); }}
               error={errors.lastServiceKm}
               keyboardType="number-pad"
+              maxLength={7}
               returnKeyType="next"
               onSubmitEditing={() => dateRef.current?.focus()}
             />
@@ -242,6 +245,7 @@ export default function VeiculoCadastroScreen() {
               onChangeText={(v) => { formatDateInput(v); setErrors((p) => ({ ...p, lastServiceDate: '' })); }}
               error={errors.lastServiceDate}
               keyboardType="number-pad"
+              maxLength={10}
               returnKeyType="done"
               onSubmitEditing={handleSalvar}
             />
